@@ -42,6 +42,8 @@ typedef struct {
     output_t plot_type;
 
     struct svg_theme *svg_theme;
+    char *x_axis_label;
+    char *y_axis_label;
 } config;
 
 #endif

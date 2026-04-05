@@ -15,20 +15,52 @@ static void svg_printf_polyline_point(size_t x, size_t y);
 static void svg_printf_end_polyline(char *color, size_t line_width);
 static void svg_printf_circle(size_t x, size_t y, size_t point_size, char *color);
 static void svg_printf_axis(plot_info *pi, svg_theme *theme);
+static void svg_printf_axis_labels(config *cfg, plot_info *pi, size_t svg_width, size_t svg_height, size_t label_space_left, size_t label_space_bottom, svg_theme *theme);
 static void svg_printf_regression_line(plot_info *pi, char *color, double slope, double intercept);
 static void svg_printf_end(void);
 
 int svg_plot(config *cfg, plot_info *pi, data_set *ds) {
     svg_theme *theme = cfg->svg_theme;
-    svg_printf_header(pi->w, pi->h);
+    
+    /* Calculate extra space needed for labels */
+    size_t label_space_left = 0;
+    size_t label_space_bottom = 0;
+    
+    if (cfg->axis && cfg->y_axis_label != NULL) {
+        label_space_left = 25;  /* Space for Y-axis label on the left */
+    }
+    if (cfg->axis && cfg->x_axis_label != NULL) {
+        label_space_bottom = 20;  /* Space for X-axis label at bottom */
+    }
+    
+    /* Expanded SVG viewport dimensions */
+    size_t svg_width = pi->w + label_space_left;
+    size_t svg_height = pi->h + label_space_bottom;
+    
+    svg_printf_header(svg_width, svg_height);
+    
+    /* Use a group with transform to offset the plot area to make room for Y-axis label */
+    if (label_space_left > 0) {
+        printf("<g transform=\"translate(%zu,0)\">\n", label_space_left);
+    }
+    
     svg_printf_frame(pi->w, pi->h, theme->bg_color, theme->border_width, theme->border_color);
 
     if (cfg->axis) {
         draw_calc_axis_pos(pi);
         svg_printf_axis(pi, theme);
     }
+    
+    if (label_space_left > 0) {
+        printf("</g>\n");
+    }
 
     transform_t transform = scale_get_transform(pi->log_x, pi->log_y);
+
+    /* Wrap data points/lines in the same transform group */
+    if (label_space_left > 0) {
+        printf("<g transform=\"translate(%zu,0)\">\n", label_space_left);
+    }
 
     for (uint8_t c = 0; c < ds->columns; c++) {
         char *color = get_color(c, theme);
@@ -78,6 +110,15 @@ int svg_plot(config *cfg, plot_info *pi, data_set *ds) {
             regression(column, ds->rows, transform, &slope, &intercept);
             svg_printf_regression_line(pi, color, slope, intercept);
         }
+    }
+
+    if (label_space_left > 0) {
+        printf("</g>\n");
+    }
+
+    /* Add axis labels - these should be in the expanded viewport, not the transformed group */
+    if (cfg->axis) {
+        svg_printf_axis_labels(cfg, pi, svg_width, svg_height, label_space_left, label_space_bottom, theme);
     }
 
     svg_printf_end();
@@ -183,6 +224,30 @@ static void svg_printf_axis(plot_info *pi, svg_theme *theme) {
                 "stroke=\"%s\" stroke-width=\"1\" />\n",
                 x0, hy, x1, hy, theme->axis_color);
         }
+    }
+}
+
+static void svg_printf_axis_labels(config *cfg, plot_info *pi, size_t svg_width, size_t svg_height, size_t label_space_left, size_t label_space_bottom, svg_theme *theme) {
+    /* X-axis label: centered horizontally in the plot area, positioned in the bottom margin */
+    if (cfg->x_axis_label != NULL) {
+        /* Center the label horizontally in the plot area (accounting for left offset) */
+        size_t label_x = label_space_left + (pi->w / 2);
+        /* Position in the bottom margin, nicely spaced */
+        size_t label_y = pi->h + (label_space_bottom / 2) + 5;  /* Centered in bottom margin */
+        printf("<text x=\"%zu\" y=\"%zu\" text-anchor=\"middle\" "
+            "fill=\"%s\" font-size=\"12\">%s</text>\n",
+            label_x, label_y, theme->axis_color, cfg->x_axis_label);
+    }
+
+    /* Y-axis label: rotated 90° counterclockwise, centered vertically, in the left margin */
+    if (cfg->y_axis_label != NULL) {
+        /* Position in the left margin */
+        size_t label_x = label_space_left / 2;
+        /* Center vertically in the plot area */
+        size_t label_y = pi->h / 2;
+        printf("<text x=\"%zu\" y=\"%zu\" text-anchor=\"middle\" "
+            "fill=\"%s\" font-size=\"12\" transform=\"rotate(-90 %zu %zu)\">%s</text>\n",
+            label_x, label_y, theme->axis_color, label_x, label_y, cfg->y_axis_label);
     }
 }
 

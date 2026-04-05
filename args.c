@@ -17,7 +17,7 @@ static void usage(const char *msg) {
     fprintf(stderr,
         "\n"
         "Usage: guff [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]\n"
-        "            [-m MODE] [-r] [-s] [-S] [-x] [FILE]\n"
+        "            [-m MODE] [-r] [-s] [-S] [-x] [-X LABEL] [-Y LABEL] [FILE]\n"
         "\n"
         "Common options:\n"
         "    -d WxH: set width and height (e.g. \"-d 72x40\", \"-d 640x480\")\n"
@@ -31,6 +31,8 @@ static void usage(const char *msg) {
         "SVG only:\n"
         "    -c: use colorblind-safe default colors\n"
         "    -r: draw linear regression lines\n"
+        "    -X LABEL: set X-axis label\n"
+        "    -Y LABEL: set Y-axis label\n"
         "\n"
         "Other options:\n"
         "    -A: don't draw axes\n"
@@ -52,7 +54,7 @@ static void parse_dims(config *cfg, const char *opt) {
 
 void args_handle(config *cfg, int argc, char **argv) {
     int fl;
-    while ((fl = getopt(argc, argv, "Acd:fhl:m:rsSx")) != -1) {
+    while ((fl = getopt(argc, argv, "Acd:fhl:m:rsSxX:Y:")) != -1) {
         switch (fl) {
         case 'A':               /* no axis */
             cfg->axis = false;
@@ -100,6 +102,12 @@ void args_handle(config *cfg, int argc, char **argv) {
             break;
         case 'x':               /* col 0 is X value */
             cfg->x_column = true;
+            break;
+        case 'X':               /* X-axis label */
+            cfg->x_axis_label = optarg;
+            break;
+        case 'Y':               /* Y-axis label */
+            cfg->y_axis_label = optarg;
             break;
         case '?':
         default:
