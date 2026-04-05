@@ -239,7 +239,7 @@ static void svg_printf_axis_labels(config *cfg, plot_info *pi, size_t svg_width,
         /* Position in the bottom margin, nicely spaced */
         size_t label_y = pi->h + (label_space_bottom / 2) + 5;  /* Centered in bottom margin */
         printf("<text x=\"%zu\" y=\"%zu\" text-anchor=\"middle\" "
-            "fill=\"%s\" font-size=\"12\">%s</text>\n",
+            "fill=\"%s\" font-family=\"sans-serif\" font-size=\"12\">%s</text>\n",
             label_x, label_y, theme->axis_color, cfg->x_axis_label);
     }
 
@@ -250,7 +250,8 @@ static void svg_printf_axis_labels(config *cfg, plot_info *pi, size_t svg_width,
         /* Center vertically in the plot area */
         size_t label_y = pi->h / 2;
         printf("<text x=\"%zu\" y=\"%zu\" text-anchor=\"middle\" "
-            "fill=\"%s\" font-size=\"12\" transform=\"rotate(-90 %zu %zu)\">%s</text>\n",
+            "fill=\"%s\" font-family=\"sans-serif\" font-size=\"12\" "
+	    "transform=\"rotate(-90 %zu %zu)\">%s</text>\n",
             label_x, label_y, theme->axis_color, label_x, label_y, cfg->y_axis_label);
     }
 }
