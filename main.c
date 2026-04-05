@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
         .axis = true,
         .in = stdin,
         .stream_mode = true,
+        .axis_tick_labels = true,
     };
 
     read_env(&cfg);

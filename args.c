@@ -17,7 +17,7 @@ static void usage(const char *msg) {
     fprintf(stderr,
         "\n"
         "Usage: guff [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]\n"
-        "            [-m MODE] [-r] [-s] [-S] [-x] [-X LABEL] [-Y LABEL] [FILE]\n"
+        "            [-m MODE] [-r] [-s] [-S] [-T] [-x] [-X LABEL] [-Y LABEL] [FILE]\n"
         "\n"
         "Common options:\n"
         "    -d WxH: set width and height (e.g. \"-d 72x40\", \"-d 640x480\")\n"
@@ -31,6 +31,7 @@ static void usage(const char *msg) {
         "SVG only:\n"
         "    -c: use colorblind-safe default colors\n"
         "    -r: draw linear regression lines\n"
+        "    -T: disable numeric tick labels on axes\n"
         "    -X LABEL: set X-axis label\n"
         "    -Y LABEL: set Y-axis label\n"
         "\n"
@@ -54,7 +55,7 @@ static void parse_dims(config *cfg, const char *opt) {
 
 void args_handle(config *cfg, int argc, char **argv) {
     int fl;
-    while ((fl = getopt(argc, argv, "Acd:fhl:m:rsSxX:Y:")) != -1) {
+    while ((fl = getopt(argc, argv, "Acd:fhl:m:rsSTxX:Y:")) != -1) {
         switch (fl) {
         case 'A':               /* no axis */
             cfg->axis = false;
@@ -99,6 +100,9 @@ void args_handle(config *cfg, int argc, char **argv) {
             break;
         case 'S':               /* disable stream mode */
             cfg->stream_mode = false;
+            break;
+        case 'T':               /* disable tick labels */
+            cfg->axis_tick_labels = false;
             break;
         case 'x':               /* col 0 is X value */
             cfg->x_column = true;

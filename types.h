@@ -35,6 +35,7 @@ typedef struct {
     bool stream_mode;
     bool colorblind;
     bool regression;
+    bool axis_tick_labels;
     size_t width;
     size_t height;
     char *in_path;

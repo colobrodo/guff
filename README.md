@@ -143,7 +143,7 @@ To run the tests, type `make test`.
 ## Usage
 
     Usage: guff [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]
-                [-m MODE] [-r] [-s] [-S] [-x] [-X LABEL] [-Y LABEL] [FILE]
+                [-m MODE] [-r] [-s] [-S] [-T] [-x] [-X LABEL] [-Y LABEL] [FILE]
 
 Common options:
 
@@ -159,6 +159,7 @@ SVG only:
 
     -c: use colorblind-safe default colors
     -r: draw linear regression lines
+    -T: disable numeric tick labels on axes (enabled by default)
     -X LABEL: set X-axis label
     -Y LABEL: set Y-axis label
 
@@ -167,7 +168,15 @@ Other options (mostly for internal testing):
     -A: don't draw axes
     -S: disable stream mode
 
-## SVG Theme Customization
+## SVG Features
+
+### Numeric Tick Labels
+
+By default, SVG plots display numeric values at axis tick marks. These labels
+use exponential notation for very large (≥10,000) or very small (<0.01) values
+to prevent clutter. Use `-T` to disable tick labels if not needed.
+
+### Theme Customization
 
 SVG output appearance can be customized using environment variables:
 

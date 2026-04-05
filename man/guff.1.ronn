@@ -4,7 +4,7 @@ guff(1) -- a plot device
 ## SYNOPSIS
 
 `guff` [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]
-       [-m MODE] [-r] [-s] [-S] [-x] [-X LABEL] [-Y LABEL] [FILE]
+       [-m MODE] [-r] [-s] [-S] [-T] [-x] [-X LABEL] [-Y LABEL] [FILE]
 
 
 ## DESCRIPTION
@@ -44,6 +44,11 @@ SVG-only options:
 
   * `-r`:
     Draw a linear regression line for each column.
+
+  * `-T`:
+    Disable numeric tick labels on axes. By default, SVG plots show
+    numeric values at axis tick marks. Use exponential notation for
+    very large (≥10000) or very small (<0.01) values.
 
   * `-X LABEL`:
     Set the X-axis label text.
