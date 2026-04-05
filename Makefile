@@ -35,8 +35,8 @@ ${PROJECT}: main.o ${OBJS}
 	${CC} -o $@ main.o ${OBJS} ${LDFLAGS}
 
 test_${PROJECT}: test_${PROJECT}.o ${TEST_OBJS}
-	${CC} -o $@ test_${PROJECT}.o ${TEST_LDFLAGS} \
-		${TEST_OBJS} ${TEST_CFLAGS}
+	${CC} -o $@ test_${PROJECT}.o ${TEST_CFLAGS} \
+		${TEST_OBJS} ${TEST_LDFLAGS}
 
 test: ./test_${PROJECT}
 	./test_${PROJECT}
