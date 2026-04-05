@@ -143,7 +143,7 @@ To run the tests, type `make test`.
 ## Usage
 
     Usage: guff [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]
-                [-m MODE] [-r] [-s] [-S] [-x] [FILE]
+                [-m MODE] [-r] [-s] [-S] [-x] [-X LABEL] [-Y LABEL] [FILE]
 
 Common options:
 
@@ -159,6 +159,8 @@ SVG only:
 
     -c: use colorblind-safe default colors
     -r: draw linear regression lines
+    -X LABEL: set X-axis label
+    -Y LABEL: set Y-axis label
 
 Other options (mostly for internal testing):
 
