@@ -167,4 +167,32 @@ Other options (mostly for internal testing):
     -A: don't draw axes
     -S: disable stream mode
 
+## SVG Theme Customization
+
+SVG output appearance can be customized using environment variables:
+
+**Colors:**
+
+    GUFF_BG_COLOR          Background color (default: "black")
+    GUFF_BORDER_COLOR      Border color (default: "black")
+    GUFF_AXIS_COLOR        Axis and label color (default: "lightgray")
+    GUFF_COLOR0            First data series color
+    GUFF_COLOR1            Second data series color
+    ...
+    GUFF_COLOR8            Ninth data series color
+
+**Widths:**
+
+    GUFF_BORDER_WIDTH      Border width in pixels (default: "2")
+    GUFF_LINE_WIDTH        Line width in pixels (default: "2")
+    GUFF_AXIS_WIDTH        Axis width in pixels (default: "2")
+
+**Example:**
+
+    # Create a plot with white background and black axes
+    $ GUFF_BG_COLOR=white GUFF_AXIS_COLOR=black ./guff -s < data.txt > plot.svg
+
+    # Use custom colors for data series
+    $ GUFF_COLOR0=red GUFF_COLOR1=blue ./guff -s -m line < data.txt > plot.svg
+
 For more details, see the man page.

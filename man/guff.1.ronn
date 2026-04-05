@@ -4,7 +4,7 @@ guff(1) -- a plot device
 ## SYNOPSIS
 
 `guff` [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]
-       [-m MODE] [-r] [-s] [-S] [-x] [FILE]
+       [-m MODE] [-r] [-s] [-S] [-x] [-X LABEL] [-Y LABEL] [FILE]
 
 
 ## DESCRIPTION
@@ -44,6 +44,12 @@ SVG-only options:
 
   * `-r`:
     Draw a linear regression line for each column.
+
+  * `-X LABEL`:
+    Set the X-axis label text.
+
+  * `-Y LABEL`:
+    Set the Y-axis label text.
 
 Rare options:
 
@@ -105,6 +111,40 @@ Same, with a log scale for the point counts:
 Same, with SVG output:
 
     $ guff -s -m count -lc
+
+Plot SVG with axis labels:
+
+    $ guff -s -X "Time (seconds)" -Y "Temperature (°C)"
+
+
+## ENVIRONMENT
+
+The following environment variables can be used to customize SVG output theme:
+
+  * `GUFF_BG_COLOR`:
+    Background color (default: "black")
+
+  * `GUFF_BORDER_COLOR`:
+    Border color (default: "black")
+
+  * `GUFF_AXIS_COLOR`:
+    Axis and label color (default: "lightgray")
+
+  * `GUFF_COLOR0` through `GUFF_COLOR8`:
+    Data series colors (defaults depend on `-c` colorblind flag)
+
+  * `GUFF_BORDER_WIDTH`:
+    Border width in pixels (default: "2")
+
+  * `GUFF_LINE_WIDTH`:
+    Line width in pixels (default: "2")
+
+  * `GUFF_AXIS_WIDTH`:
+    Axis width in pixels (default: "2")
+
+Example:
+
+    $ GUFF_BG_COLOR=white GUFF_AXIS_COLOR=black guff -s
 
 
 ## BUGS
