@@ -39,6 +39,10 @@ int svg_plot(config *cfg, plot_info *pi, data_set *ds) {
     
     svg_printf_header(svg_width, svg_height);
     
+    /* Add full-viewport background rect to ensure consistent background color */
+    printf("<rect x=\"0\" y=\"0\" width=\"%zu\" height=\"%zu\" fill=\"%s\" />\n",
+        svg_width, svg_height, theme->bg_color);
+    
     /* Use a group with transform to offset the plot area to make room for Y-axis label */
     if (label_space_left > 0) {
         printf("<g transform=\"translate(%zu,0)\">\n", label_space_left);
