@@ -25,11 +25,13 @@ static void svg_printf_polyline_point(size_t x, size_t y);
 static void svg_printf_end_polyline(char *color, size_t line_width);
 static void svg_printf_circle(size_t x, size_t y, size_t point_size, char *color);
 static void svg_printf_axis(config *cfg, plot_info *pi, svg_theme *theme);
-static void svg_printf_axis_labels(config *cfg, plot_info *pi, size_t svg_width, size_t svg_height, size_t label_space_left, size_t label_space_bottom, svg_theme *theme);
+static void svg_printf_axis_labels(config *cfg, plot_info *pi, const char *x_label, const char *y_label, size_t svg_width, size_t svg_height, size_t label_space_left, size_t label_space_bottom, svg_theme *theme);
 static void svg_printf_regression_line(plot_info *pi, char *color, double slope, double intercept);
 static void svg_printf_end(void);
 static void format_number(double value, char *buf, size_t buflen, double range);
 static double pixel_to_data_value(int pixel_pos, size_t axis_pixel, double min_val, double range, size_t dimension, bool is_log);
+static void svg_printf_legend(config *cfg, plot_info *pi, data_set *ds, size_t svg_width, svg_theme *theme);
+static void svg_printf_escaped(const char *s);
 
 int svg_plot(config *cfg, plot_info *pi, data_set *ds) {
     svg_theme *theme = cfg->svg_theme;
@@ -141,11 +143,122 @@ int svg_plot(config *cfg, plot_info *pi, data_set *ds) {
 
     /* Add axis labels - these should be in the expanded viewport, not the transformed group */
     if (cfg->axis) {
-        svg_printf_axis_labels(cfg, pi, svg_width, svg_height, label_space_left, label_space_bottom, theme);
+        const char *x_label = cfg->x_axis_label;
+        if (x_label == NULL && cfg->x_column && cfg->input_has_header && ds->header_field_count > 0) {
+            if (ds->header_fields[0] && *ds->header_fields[0]) {
+                x_label = ds->header_fields[0];
+            }
+        }
+        svg_printf_axis_labels(cfg, pi, x_label, cfg->y_axis_label, svg_width, svg_height, label_space_left, label_space_bottom, theme);
+    }
+
+    if (cfg->input_has_header && ds->header_field_count > 0) {
+        svg_printf_legend(cfg, pi, ds, svg_width, theme);
     }
 
     svg_printf_end();
     return 0;
+}
+
+static void svg_printf_escaped(const char *s) {
+    /* Minimal XML escaping for text nodes. */
+    for (const unsigned char *p = (const unsigned char *)s; p && *p; p++) {
+        switch (*p) {
+        case '&':
+            fputs("&amp;", stdout);
+            break;
+        case '<':
+            fputs("&lt;", stdout);
+            break;
+        case '>':
+            fputs("&gt;", stdout);
+            break;
+        case '\"':
+            fputs("&quot;", stdout);
+            break;
+        case '\'':
+            fputs("&apos;", stdout);
+            break;
+        default:
+            fputc(*p, stdout);
+            break;
+        }
+    }
+}
+
+static const char *legend_label_for_column(config *cfg, data_set *ds, uint8_t col, char *fallback, size_t fallback_sz) {
+    size_t idx = col;
+    if (cfg->x_column) { idx = (size_t)col + 1; }
+
+    if (idx < ds->header_field_count) {
+        const char *s = ds->header_fields[idx];
+        if (s && *s) { return s; }
+    }
+
+    snprintf(fallback, fallback_sz, "col %u", col);
+    return fallback;
+}
+
+static void svg_printf_legend(config *cfg, plot_info *pi, data_set *ds, size_t svg_width, svg_theme *theme) {
+    (void)pi;
+    /* Matplotlib-like legend, fixed top-right for now. */
+    const size_t margin = 8;
+    const size_t padding = 6;
+    const size_t font_size = 10;
+    const size_t line_h = 14;
+    const size_t sample_w = 18;
+    const size_t gap = 6;
+
+    if (ds->columns == 0) { return; }
+
+    size_t max_len = 0;
+    for (uint8_t c = 0; c < ds->columns; c++) {
+        char fb[32];
+        const char *label = legend_label_for_column(cfg, ds, c, fb, sizeof(fb));
+        size_t len = strlen(label);
+        if (len > max_len) { max_len = len; }
+    }
+
+    /* Approximate text width: average glyph width ~0.6em for sans-serif. */
+    size_t text_w = (size_t)(0.6 * (double)font_size * (double)max_len);
+    size_t w = padding + sample_w + gap + text_w + padding;
+    size_t h = padding + (size_t)ds->columns * line_h + padding;
+
+    size_t x0 = (svg_width > margin + w) ? (svg_width - margin - w) : 0;
+    size_t y0 = margin;
+
+    printf("<g id=\"legend\">\n");
+    printf("<rect x=\"%zu\" y=\"%zu\" width=\"%zu\" height=\"%zu\" "
+           "fill=\"%s\" fill-opacity=\"0.7\" stroke=\"%s\" stroke-width=\"1\" rx=\"3\" />\n",
+        x0, y0, w, h, theme->bg_color, theme->axis_color);
+
+    for (uint8_t c = 0; c < ds->columns; c++) {
+        char *color = get_color(c, theme);
+        size_t row_y = y0 + padding + (size_t)c * line_h;
+        size_t sx0 = x0 + padding;
+        size_t sy = row_y + (line_h / 2);
+        size_t sx1 = sx0 + sample_w;
+
+        if (cfg->mode == MODE_LINE) {
+            printf("<line x1=\"%zu\" y1=\"%zu\" x2=\"%zu\" y2=\"%zu\" stroke=\"%s\" stroke-width=\"%u\" />\n",
+                sx0, sy, sx1, sy, color, theme->line_width);
+        } else {
+            size_t cx = sx0 + (sample_w / 2);
+            printf("<circle cx=\"%zu\" cy=\"%zu\" r=\"%u\" stroke=\"%s\" />\n",
+                cx, sy, SVG_DEF_POINT_SIZE, color);
+        }
+
+        char fb[32];
+        const char *label = legend_label_for_column(cfg, ds, c, fb, sizeof(fb));
+        size_t tx = x0 + padding + sample_w + gap;
+        size_t ty = row_y + font_size; /* baseline */
+        printf("<text x=\"%zu\" y=\"%zu\" text-anchor=\"start\" "
+               "fill=\"%s\" font-family=\"sans-serif\" font-size=\"%zu\">",
+            tx, ty, theme->axis_color, font_size);
+        svg_printf_escaped(label);
+        printf("</text>\n");
+    }
+    printf("</g>\n");
 }
 
 static char *get_color(uint8_t column, svg_theme *theme) {
@@ -358,28 +471,35 @@ static void svg_printf_axis(config *cfg, plot_info *pi, svg_theme *theme) {
     }
 }
 
-static void svg_printf_axis_labels(config *cfg, plot_info *pi, size_t svg_width, size_t svg_height, size_t label_space_left, size_t label_space_bottom, svg_theme *theme) {
+static void svg_printf_axis_labels(config *cfg, plot_info *pi, const char *x_label, const char *y_label, size_t svg_width, size_t svg_height, size_t label_space_left, size_t label_space_bottom, svg_theme *theme) {
+    (void)svg_width;
+    (void)svg_height;
+    (void)cfg;
     /* X-axis label: centered horizontally in the plot area, positioned in the bottom margin */
-    if (cfg->x_axis_label != NULL) {
+    if (x_label != NULL) {
         /* Center the label horizontally in the plot area (accounting for left offset) */
         size_t label_x = label_space_left + (pi->w / 2);
         /* Position in the bottom margin, nicely spaced */
         size_t label_y = pi->h + (label_space_bottom / 2) + 5;  /* Centered in bottom margin */
         printf("<text x=\"%zu\" y=\"%zu\" text-anchor=\"middle\" "
-            "fill=\"%s\" font-family=\"sans-serif\" font-size=\"12\">%s</text>\n",
-            label_x, label_y, theme->axis_color, cfg->x_axis_label);
+            "fill=\"%s\" font-family=\"sans-serif\" font-size=\"12\">",
+            label_x, label_y, theme->axis_color);
+        svg_printf_escaped(x_label);
+        printf("</text>\n");
     }
 
     /* Y-axis label: rotated 90° counterclockwise, centered vertically, in the left margin */
-    if (cfg->y_axis_label != NULL) {
+    if (y_label != NULL) {
         /* Position in the left margin */
         size_t label_x = label_space_left / 2;
         /* Center vertically in the plot area */
         size_t label_y = pi->h / 2;
         printf("<text x=\"%zu\" y=\"%zu\" text-anchor=\"middle\" "
             "fill=\"%s\" font-family=\"sans-serif\" font-size=\"12\" "
-	    "transform=\"rotate(-90 %zu %zu)\">%s</text>\n",
-            label_x, label_y, theme->axis_color, label_x, label_y, cfg->y_axis_label);
+	    "transform=\"rotate(-90 %zu %zu)\">",
+            label_x, label_y, theme->axis_color, label_x, label_y);
+        svg_printf_escaped(y_label);
+        printf("</text>\n");
     }
 }
 

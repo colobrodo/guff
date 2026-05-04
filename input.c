@@ -5,6 +5,8 @@
 
 static void add_pair(config *cfg, data_set *ds, size_t row, uint8_t col, point *p);
 static bool number_head_char(char c);
+static bool is_comment_marker(char c);
+static bool parse_header_fields(data_set *ds, char *line);
 
 static char buf[64 * 1024];
 
@@ -15,8 +17,22 @@ int input_read(config *cfg, data_set *ds) {
 
     init_pairs(ds);
 
+    /* Optional header row is scoped to a single dataset (a stream "frame"). */
+    bool header_consumed = false;
+
     while ((line = fgets(buf, sizeof(buf) - 1, cfg->in))) {
         size_t len = strlen(line);
+
+        if (cfg->input_has_header && !header_consumed) {
+            /* Consume the first non-empty, non-comment line as the header row. */
+            if (len > 0 && line[len - 1] == '\n') { line[len - 1] = '\0'; len--; }
+            if (len == 0 || *line == '\0') { continue; }
+            if (is_comment_marker(line[0])) { continue; }
+
+            parse_header_fields(ds, line);
+            header_consumed = true;
+            continue;
+        }
         
         sink_line_res res = sink_line(cfg, ds, line, len, row_count);
         switch (res) {
@@ -45,6 +61,64 @@ static bool is_comment_marker(char c) {
     default:
         return false;
     }
+}
+
+static char *strndup_local(const char *s, size_t n) {
+    char *out = malloc(n + 1);
+    if (out == NULL) { err(1, "malloc"); }
+    memcpy(out, s, n);
+    out[n] = '\0';
+    return out;
+}
+
+static bool is_header_sep(unsigned char c) {
+    return (c == ',' || c == '\t' || c == ' ' || c == '\r' || c == '\n');
+}
+
+static void header_fields_free(data_set *ds) {
+    if (ds->header_fields) {
+        for (size_t i = 0; i < ds->header_field_count; i++) {
+            free(ds->header_fields[i]);
+        }
+        free(ds->header_fields);
+    }
+    ds->header_fields = NULL;
+    ds->header_field_count = 0;
+}
+
+static bool parse_header_fields(data_set *ds, char *line) {
+    /* Replace any existing header (shouldn't happen in normal flow). */
+    header_fields_free(ds);
+
+    size_t cap = 0;
+    size_t n = 0;
+    char **fields = NULL;
+
+    const unsigned char *p = (const unsigned char *)line;
+    while (*p) {
+        /* Skip leading separators */
+        while (*p && is_header_sep(*p)) { p++; }
+        if (!*p) { break; }
+
+        const unsigned char *start = p;
+        while (*p && !is_header_sep(*p)) { p++; }
+        const unsigned char *end = p;
+
+        /* Trim ASCII spaces around token (keep simple). */
+        while (start < end && (*start == ' ')) { start++; }
+        while (end > start && (*(end - 1) == ' ')) { end--; }
+
+        if (n == cap) {
+            cap = (cap == 0 ? 8 : cap * 2);
+            fields = realloc(fields, cap * sizeof(*fields));
+            if (fields == NULL) { err(1, "realloc"); }
+        }
+        fields[n++] = strndup_local((const char *)start, (size_t)(end - start));
+    }
+
+    ds->header_fields = fields;
+    ds->header_field_count = n;
+    return true;
 }
 
 sink_line_res sink_line(config *cfg, data_set *ds, char *line, size_t len, size_t row_count) {
@@ -207,6 +281,12 @@ static void add_pair(config *cfg, data_set *ds, size_t row, uint8_t col, point *
 
 void input_free(data_set *ds) {
     if (ds && ds->pairs) {
+        if (ds->header_fields) {
+            for (size_t i = 0; i < ds->header_field_count; i++) {
+                free(ds->header_fields[i]);
+            }
+            free(ds->header_fields);
+        }
         point **pairs = ds->pairs;
         for (uint8_t c = 0; c < ds->columns; c++) {
             free(pairs[c]);

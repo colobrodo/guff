@@ -113,6 +113,84 @@ DEF_TEST(input_exponent) {
     PASS();
 }
 
+DEF_TEST(input_header_skips_first_row) {
+    init_pairs(&ds);
+
+    FILE *f = tmpfile();
+    ASSERT(f != NULL);
+    fputs("x\ty\n", f);
+    fputs("1\t2\n", f);
+    fputs("3\t4\n", f);
+    rewind(f);
+
+    config cfg = {
+        .in = f,
+        .input_has_header = true,
+    };
+
+    int res = input_read(&cfg, &ds);
+    ASSERT_EQ(-1, res);  // end-of-stream
+
+    ASSERT_EQ(2, ds.columns);
+    ASSERT_EQ(2, ds.rows);
+
+    ASSERT_EQ(2, ds.header_field_count);
+    ASSERT_STR_EQ("x", ds.header_fields[0]);
+    ASSERT_STR_EQ("y", ds.header_fields[1]);
+
+    point exp0_0 = { .x = 0, .y = 1 };
+    point exp0_1 = { .x = 0, .y = 2 };
+    point exp1_0 = { .x = 1, .y = 3 };
+    point exp1_1 = { .x = 1, .y = 4 };
+    ASSERT_EQUAL_T(&exp0_0, &ds.pairs[0][0], type_point, NULL);
+    ASSERT_EQUAL_T(&exp0_1, &ds.pairs[1][0], type_point, NULL);
+    ASSERT_EQUAL_T(&exp1_0, &ds.pairs[0][1], type_point, NULL);
+    ASSERT_EQUAL_T(&exp1_1, &ds.pairs[1][1], type_point, NULL);
+
+    fclose(f);
+    PASS();
+}
+
+DEF_TEST(input_header_x_column_maps_series_names) {
+    init_pairs(&ds);
+
+    FILE *f = tmpfile();
+    ASSERT(f != NULL);
+    fputs("time\tA\tB\n", f);
+    fputs("1\t2\t3\n", f);
+    fputs("2\t4\t6\n", f);
+    rewind(f);
+
+    config cfg = {
+        .in = f,
+        .input_has_header = true,
+        .x_column = true,
+    };
+
+    int res = input_read(&cfg, &ds);
+    ASSERT_EQ(-1, res);  // end-of-stream
+
+    ASSERT_EQ(2, ds.columns);
+    ASSERT_EQ(2, ds.rows);
+    ASSERT_EQ(3, ds.header_field_count);
+    ASSERT_STR_EQ("time", ds.header_fields[0]);
+    ASSERT_STR_EQ("A", ds.header_fields[1]);
+    ASSERT_STR_EQ("B", ds.header_fields[2]);
+
+    /* Verify -x behavior: col 0 is X, series are A and B. */
+    point exp0_0 = { .x = 1, .y = 2 };
+    point exp0_1 = { .x = 2, .y = 4 };
+    point exp1_0 = { .x = 1, .y = 3 };
+    point exp1_1 = { .x = 2, .y = 6 };
+    ASSERT_EQUAL_T(&exp0_0, &ds.pairs[0][0], type_point, NULL);
+    ASSERT_EQUAL_T(&exp0_1, &ds.pairs[0][1], type_point, NULL);
+    ASSERT_EQUAL_T(&exp1_0, &ds.pairs[1][0], type_point, NULL);
+    ASSERT_EQUAL_T(&exp1_1, &ds.pairs[1][1], type_point, NULL);
+
+    fclose(f);
+    PASS();
+}
+
 DEF_TEST(input_multiline) {
     init_pairs(&ds);
     ASSERT_EQ(SINK_LINE_OK, sink_line(&empty_cfg, &ds, "23", 2, 0));
@@ -361,6 +439,8 @@ SUITE(s_input) {
     RUN_TEST(input_csv);
     RUN_TEST(input_tab);
     RUN_TEST(input_exponent);
+    RUN_TEST(input_header_skips_first_row);
+    RUN_TEST(input_header_x_column_maps_series_names);
     RUN_TEST(input_multiline);
 
     // empty cell handling

@@ -16,12 +16,13 @@ static void usage(const char *msg) {
         GUFF_VERSION_PATCH, GUFF_AUTHOR);
     fprintf(stderr,
         "\n"
-        "Usage: guff [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]\n"
+        "Usage: guff [-A] [-c] [-d WxH] [-f] [-h] [-H] [-l xyc]\n"
         "            [-m MODE] [-r] [-s] [-S] [-T] [-x] [-X LABEL] [-Y LABEL] [FILE]\n"
         "\n"
         "Common options:\n"
         "    -d WxH: set width and height (e.g. \"-d 72x40\", \"-d 640x480\")\n"
         "    -f: flip x & y axes in plot\n"
+        "    -H: input has a header row (first non-comment line ignored)\n"
         "    -h: print this message\n"
         "    -l LOG: any of 'x', 'y', 'c' -- set X, Y, and/or count to log scale\n"
         "    -m MODE: dot, count, line (SVG only), default dot\n"
@@ -55,7 +56,7 @@ static void parse_dims(config *cfg, const char *opt) {
 
 void args_handle(config *cfg, int argc, char **argv) {
     int fl;
-    while ((fl = getopt(argc, argv, "Acd:fhl:m:rsSTxX:Y:")) != -1) {
+    while ((fl = getopt(argc, argv, "Acd:fHhl:m:rsSTxX:Y:")) != -1) {
         switch (fl) {
         case 'A':               /* no axis */
             cfg->axis = false;
@@ -68,6 +69,9 @@ void args_handle(config *cfg, int argc, char **argv) {
             break;
         case 'f':               /* flip x/y */
             cfg->flip_xy = true;
+            break;
+        case 'H':               /* header row */
+            cfg->input_has_header = true;
             break;
         case 'h':               /* help */
             usage(NULL);

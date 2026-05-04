@@ -11,6 +11,10 @@ typedef struct {
     uint8_t columns;
     size_t rows;
     point **pairs;  // p[col] -> p[row]
+
+    /* Optional column names from an input header row (see -H). */
+    char **header_fields;
+    size_t header_field_count;
 } data_set;
 
 typedef enum {
@@ -30,6 +34,8 @@ typedef struct {
     bool log_count;
     bool flip_xy;
     bool x_column;
+    /* Input begins with a header row (e.g. TSV/CSV column names). */
+    bool input_has_header;
     plot_t mode;
     bool axis;
     bool stream_mode;

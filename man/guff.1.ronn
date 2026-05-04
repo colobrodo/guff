@@ -4,7 +4,7 @@ guff(1) -- a plot device
 ## SYNOPSIS
 
 `guff` [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]
-       [-m MODE] [-r] [-s] [-S] [-T] [-x] [-X LABEL] [-Y LABEL] [FILE]
+       [-H] [-m MODE] [-r] [-s] [-S] [-T] [-x] [-X LABEL] [-Y LABEL] [FILE]
 
 
 ## DESCRIPTION
@@ -22,6 +22,10 @@ Common options:
 
   * `-f`:
     Flip X and Y axes in plot.
+
+  * `-H`:
+    Input has a header row. The first non-empty, non-comment line is ignored.
+    If `-x` is set and `-X` is not, the first header field is used as the X-axis label.
 
   * `-h`:
     Print a help message.

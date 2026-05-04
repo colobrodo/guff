@@ -7,7 +7,7 @@
 \fBguff\fR \- a plot device
 .
 .SH "SYNOPSIS"
-\fBguff\fR [\-A] [\-c] [\-d WxH] [\-f] [\-h] [\-l xyc] [\-m MODE] [\-r] [\-s] [\-S] [\-x] [FILE]
+\fBguff\fR [\-A] [\-c] [\-d WxH] [\-f] [\-h] [\-l xyc] [\-H] [\-m MODE] [\-r] [\-s] [\-S] [\-x] [FILE]
 .
 .SH "DESCRIPTION"
 guff reads a stream of points from a file / stdin and plots them\.
@@ -22,6 +22,11 @@ Set the dimensions (width and height)\. Should be formatted like "\-d WxH", e\.g
 .TP
 \fB\-f\fR
 Flip X and Y axes in plot\.
+.
+.TP
+\fB\-H\fR
+Input has a header row\. The first non\-empty, non\-comment line is ignored\.
+If \fB\-x\fR is set and \fB\-X\fR is not, the first header field is used as the X\-axis label\.
 .
 .TP
 \fB\-h\fR
