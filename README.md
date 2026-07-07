@@ -10,6 +10,25 @@ guff is distributed under the [ISC License][ISC].
 
 [ISC]: https://opensource.org/licenses/isc-license.txt
 
+## About this fork
+
+This is a fork of [silentbicycle/guff][UPSTREAM] by Scott Vokes. It keeps the
+original ASCII/SVG plotting core and adds:
+
+- **Axis labels** (`-X LABEL`, `-Y LABEL`): set custom X/Y axis labels in SVG mode.
+- **Header row support** (`-H`): treat the first non-comment line of input as a
+  header row, and use its field names to label axes and data series instead of
+  generic column indices.
+- **Legend**: when `-H` is used, SVG output draws a matplotlib-style legend in
+  the top-right corner, mapping each series' color/marker to its column name.
+- **Numeric tick labels**: SVG axis ticks show numeric values by default
+  (using exponential notation for very large or very small numbers); disable
+  with `-T`.
+
+See "SVG Features" below for details.
+
+[UPSTREAM]: https://github.com/silentbicycle/guff
+
 ## Plots them?
 
 It can plot to stdout:
@@ -142,7 +161,7 @@ To run the tests, type `make test`.
 
 ## Usage
 
-    Usage: guff [-A] [-c] [-d WxH] [-f] [-h] [-l xyc]
+    Usage: guff [-A] [-c] [-d WxH] [-f] [-h] [-H] [-l xyc]
                 [-m MODE] [-r] [-s] [-S] [-T] [-x] [-X LABEL] [-Y LABEL] [FILE]
 
 Common options:
@@ -150,6 +169,7 @@ Common options:
     -d WxH: set width and height (e.g. "-d 72x40", "-d 640x480")
     -f: flip x & y axes in plot
     -h: print help message
+    -H: input has a header row (first non-comment line ignored; used to label axes/legend)
     -l LOG: any of 'x', 'y', 'c' -- set X, Y, and/or count to log scale
     -m MODE: dot, count, line (SVG only), default dot
     -s: render to SVG
@@ -169,6 +189,18 @@ Other options (mostly for internal testing):
     -S: disable stream mode
 
 ## SVG Features
+
+### Axis Labels, Header Row & Legend
+
+Use `-X LABEL` and `-Y LABEL` to set explicit axis labels in SVG output.
+
+Use `-H` to treat the first non-comment line of input as a header row (its
+values are not plotted). When `-H` is set:
+
+- The header field for the X column is used as the default X-axis label
+  (unless `-X` overrides it).
+- A legend is drawn in the top-right corner of the plot, labeling each data
+  series with its header field name instead of a generic "col N".
 
 ### Numeric Tick Labels
 
